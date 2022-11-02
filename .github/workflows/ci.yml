@@ -1,0 +1,171 @@
+name: Check, Test, Lint, Build
+
+on: [push, pull_request]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Run cargo check
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
+
+  run-tests:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Run cargo test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+
+  lints:
+    name: Lints
+    needs: [check]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Cargo Cache
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo
+          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ hashFiles('Cargo.toml') }}
+            ${{ runner.os }}-cargo
+
+      - name: Cargo Target Cache
+        uses: actions/cache@v1
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-target-${{ hashFiles('Cargo.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-target-${{ hashFiles('Cargo.toml') }}
+            ${{ runner.os }}-cargo-target
+            
+
+      - name: Install stable toolchain for clippy
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          components: clippy
+
+      - name: Run cargo clippy
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: -- -D warnings
+
+
+#  build-windows:
+#    runs-on: windows-latest
+#    needs: [check, run-tests]
+#
+#    steps:
+#    - uses: actions/checkout@v2
+#
+#    - name: Install latest toolchain
+#      uses: actions-rs/toolchain@v1
+#      with:
+#        target: x86_64-pc-windows-msvc
+#        toolchain: stable
+#        override: true
+#
+#    - name: Cargo Cache
+#      uses: actions/cache@v1
+#      with:
+#        path: ~/.cargo
+#        key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.toml') }}
+#        restore-keys: |
+#          ${{ runner.os }}-cargo-${{ hashFiles('Cargo.toml') }}
+#          ${{ runner.os }}-cargo
+#    - name: Cargo Target Cache
+#      uses: actions/cache@v1
+#      with:
+#        path: target
+#        key: ${{ runner.os }}-cargo-target-${{ hashFiles('Cargo.toml') }}
+#        restore-keys: |
+#          ${{ runner.os }}-cargo-target-${{ hashFiles('Cargo.toml') }}
+#          ${{ runner.os }}-cargo-target
+#
+#    - name: Build
+#      uses: actions-rs/cargo@v1
+#      with:
+#        command: build
+#        args: --release --bin 2d_procgen_image
+#
+#    - uses: actions/upload-artifact@v3
+#      with:
+#        name: Windows
+#        path: target/release/2d_procgen_image.exe
+#
+#  build-linux:
+#    runs-on: ubuntu-latest
+#    needs: [check, run-tests]
+#
+#    steps:
+#      - uses: actions/checkout@v2
+#
+#      - name: Install latest toolchain
+#        uses: actions-rs/toolchain@v1
+#        with:
+#          target: x86_64-pc-windows-msvc
+#          toolchain: stable
+#          override: true
+#
+#      - name: Cargo Cache
+#        uses: actions/cache@v1
+#        with:
+#          path: ~/.cargo
+#          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.toml') }}
+#          restore-keys: |
+#            ${{ runner.os }}-cargo-${{ hashFiles('Cargo.toml') }}
+#            ${{ runner.os }}-cargo
+#      - name: Cargo Target Cache
+#        uses: actions/cache@v1
+#        with:
+#          path: target
+#          key: ${{ runner.os }}-cargo-target-${{ hashFiles('Cargo.toml') }}
+#          restore-keys: |
+#            ${{ runner.os }}-cargo-target-${{ hashFiles('Cargo.toml') }}
+#            ${{ runner.os }}-cargo-target
+#
+#      - name: Build
+#        uses: actions-rs/cargo@v1
+#        with:
+#          command: build
+#          args: --release --bin 2d_procgen_image
+#
+#      - uses: actions/upload-artifact@v3
+#        with:
+#          name: Ubuntu
+#          path: target/release/2d_procgen_imag
