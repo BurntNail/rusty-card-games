@@ -1,5 +1,5 @@
 [package]
-name = "rust-card-games-2"
+name = "rusty-card-games"
 version = "0.1.0"
 edition = "2021"
 
